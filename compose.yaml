@@ -1,0 +1,30 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: javatests
+      POSTGRES_USER: javatests
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-localdev}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U javatests -d javatests"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+  app:
+    build: .
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/javatests
+      DB_USERNAME: javatests
+      DB_PASSWORD: ${DB_PASSWORD:-localdev}
+      PORT: 8097
+    ports:
+      - "8097:8097"
+    restart: unless-stopped
+volumes:
+  postgres_data:

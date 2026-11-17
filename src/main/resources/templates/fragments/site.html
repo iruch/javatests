@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<body>
+<header class="topbar" th:fragment="header">
+    <button class="icon-button menu-toggle" type="button" aria-label="Открыть навигацию" aria-expanded="false" data-menu-toggle>
+        <span class="menu-lines" aria-hidden="true"></span>
+    </button>
+    <a class="brand" th:href="@{/}" aria-label="JavaTests, главная">
+        <span class="brand-mark" aria-hidden="true">JT</span>
+        <span>JavaTests</span>
+    </a>
+    <div class="topbar-context">Подготовка к собеседованию</div>
+    <a class="topbar-link" href="https://github.com/iruch/javatests" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a>
+</header>
+
+<aside class="sidebar" th:fragment="sidebar">
+    <div class="sidebar-heading">
+        <div>Библиотека тестов</div>
+        <span class="course-count" th:text="${#lists.size(courses)}">2</span>
+    </div>
+    <nav aria-label="Курсы и темы" class="course-tree">
+        <section class="course-node" th:each="course : ${courses}">
+            <details th:open="${courseStat.first}">
+                <summary class="course-title">
+                    <span class="disclosure" aria-hidden="true"></span>
+                    <span class="course-dot" aria-hidden="true"></span>
+                    <span class="course-label" th:text="${course.title}">Java Core</span>
+                    <span class="topic-count" th:text="${#lists.size(course.topics)}">8</span>
+                </summary>
+                <ul class="topic-list">
+                    <li th:each="topic : ${course.topics}">
+                        <a th:href="@{/topics/{id}/quiz(id=${topic.id})}" th:classappend="${selectedTopicId == topic.id} ? ' active' : ''">
+                            <span class="topic-marker" aria-hidden="true"></span>
+                            <span th:text="${topic.title}">Основы языка</span>
+                            <span class="lesson-count" th:text="${topic.lessonCount}">0</span>
+                        </a>
+                    </li>
+                </ul>
+            </details>
+        </section>
+        <div class="tree-empty" th:if="${#lists.isEmpty(courses)}">Курсы пока не добавлены</div>
+    </nav>
+    <div class="sidebar-note"><span class="status-dot" aria-hidden="true"></span><span>Материалы пополняются</span></div>
+</aside>
+</body>
+</html>

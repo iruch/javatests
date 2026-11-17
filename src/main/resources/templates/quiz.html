@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#f6f8fa">
+    <title th:text="|${topic.title} — JavaTests|">Тема — JavaTests</title><link rel="stylesheet" th:href="@{/css/site.css}">
+</head>
+<body>
+<div th:replace="~{fragments/site :: header}"></div>
+<div class="app-shell"><div class="sidebar-backdrop" data-menu-close></div><div th:replace="~{fragments/site :: sidebar}"></div>
+    <main class="main-content">
+        <div class="breadcrumb"><a th:href="@{/}">Тесты</a><span class="breadcrumb-separator">/</span><span th:text="${topic.course.title}">Java Core</span><span class="breadcrumb-separator">/</span><span th:text="${topic.title}">Основы языка</span></div>
+        <section class="quiz-heading"><div><p class="eyebrow" th:text="${topic.course.title}">Java Core</p><h1 th:text="${topic.title}">Основы языка</h1><p class="quiz-description">Вопросы для проверки знаний по теме</p></div><div class="quiz-count"><span class="count-number" th:text="${#lists.size(lessons)}">0</span><span>вопросов</span></div></section>
+        <section class="quiz-content" aria-live="polite"><div class="quiz-toolbar"><span class="quiz-status"><span></span>Тестирование</span><span th:if="${!#lists.isEmpty(lessons)}" th:text="|${#lists.size(lessons)} вопросов · порядок случайный|">5 вопросов · порядок случайный</span></div>
+            <div class="quiz-empty" th:if="${#lists.isEmpty(lessons)}"><div class="empty-symbol" aria-hidden="true">?</div><h2>Вопросы готовятся</h2><p>В этой теме пока нет опубликованных уроков. Загляните позже — вопросы появятся здесь.</p><a class="back-link" th:href="@{/}"><span aria-hidden="true">←</span> К списку курсов</a></div>
+            <ol class="question-list" th:if="${!#lists.isEmpty(lessons)}"><li class="question-item" th:each="lesson, iter : ${lessons}"><div class="question-number" th:text="${iter.count}">1</div><div><h2 th:text="${lesson.title}">Вопрос</h2><p th:text="${lesson.questionText}">Текст вопроса</p></div></li></ol>
+        </section>
+        <footer class="page-footer"><span>JavaTests</span><span>Материалы для подготовки к собеседованию</span></footer>
+    </main>
+</div><script th:src="@{/js/site.js}" defer></script>
+</body></html>
