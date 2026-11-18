@@ -14,12 +14,9 @@ public class QuizApiController {
     @GetMapping("/api/topics/{topicId}/quiz")
     public QuizResponse quiz(@PathVariable long topicId) {
         var topic = courseService.getTopic(topicId);
-        var questions = courseService.getRandomizedLessons(topic).stream()
-                .map(lesson -> new QuestionResponse(lesson.getId(), lesson.getTitle(), lesson.getQuestionText()))
-                .toList();
+        var questions = courseService.getRandomizedQuestions(topic);
         return new QuizResponse(topic.getId(), topic.getTitle(), questions, questions.size());
     }
 
-    public record QuizResponse(Long topicId, String topic, List<QuestionResponse> questions, int total) {}
-    public record QuestionResponse(Long id, String title, String question) {}
+    public record QuizResponse(Long topicId, String topic, List<CourseService.QuestionView> questions, int total) {}
 }

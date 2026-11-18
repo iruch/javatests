@@ -32,7 +32,7 @@
                         <a th:href="@{/topics/{id}/quiz(id=${topic.id})}" th:classappend="${selectedTopicId == topic.id} ? ' active' : ''">
                             <span class="topic-marker" aria-hidden="true"></span>
                             <span th:text="${topic.title}">Основы языка</span>
-                            <span class="lesson-count" th:text="${topic.lessonCount}">0</span>
+                            <span class="lesson-count" th:text="${topic.questionCount}">0</span>
                         </a>
                     </li>
                 </ul>

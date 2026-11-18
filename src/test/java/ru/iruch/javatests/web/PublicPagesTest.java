@@ -38,7 +38,7 @@ class PublicPagesTest {
         given(topic.getId()).willReturn(42L);
         given(topic.getTitle()).willReturn("Основы языка");
         given(courseService.getTopic(42L)).willReturn(topic);
-        given(courseService.getRandomizedLessons(topic)).willReturn(List.of());
+        given(courseService.getRandomizedQuestions(topic)).willReturn(List.of());
         mvc.perform(get("/api/topics/42/quiz"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.topicId").value(42))
@@ -46,5 +46,21 @@ class PublicPagesTest {
                 .andExpect(jsonPath("$.questions").isArray())
                 .andExpect(jsonPath("$.questions.length()").value(0))
                 .andExpect(jsonPath("$.total").value(0));
+    }
+
+    @Test
+    void quizApiReturnsQuestionsWithLessonAndAnswer() throws Exception {
+        var topic = org.mockito.Mockito.mock(ru.iruch.javatests.course.Topic.class);
+        given(topic.getId()).willReturn(7L);
+        given(topic.getTitle()).willReturn("Основы языка");
+        given(courseService.getTopic(7L)).willReturn(topic);
+        given(courseService.getRandomizedQuestions(topic)).willReturn(List.of(new CourseService.QuestionView(
+                1L, "Final", "Что означает final для класса?", "Класс нельзя наследовать (например, String).")));
+        mvc.perform(get("/api/topics/7/quiz"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.total").value(1))
+                .andExpect(jsonPath("$.questions[0].lesson").value("Final"))
+                .andExpect(jsonPath("$.questions[0].question").value("Что означает final для класса?"))
+                .andExpect(jsonPath("$.questions[0].answer").value("Класс нельзя наследовать (например, String)."));
     }
 }

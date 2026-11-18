@@ -27,7 +27,7 @@ public class HomeController {
         model.addAttribute("topicCount", courses.stream().mapToInt(course -> course.topics().size()).sum());
         model.addAttribute("selectedTopicId", topicId);
         model.addAttribute("topic", topic);
-        model.addAttribute("lessons", courseService.getRandomizedLessons(topic));
+        model.addAttribute("questions", courseService.getRandomizedQuestions(topic));
         return "quiz";
     }
 }

@@ -112,6 +112,9 @@ h1, h2, p { margin-top: 0; }
 .question-number { display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%; background: var(--blue-soft); color: #0550ae; font-size: 12px; font-weight: 650; }
 .question-item h2 { margin: 3px 0 7px; font-size: 14px; }
 .question-item p { margin: 0; color: var(--muted); line-height: 1.55; white-space: pre-wrap; }
+.question-lesson { display: inline-block; margin-bottom: 2px; color: var(--muted); font-size: 11px; font-weight: 600; letter-spacing: .02em; text-transform: uppercase; }
+.question-answer summary { width: fit-content; color: var(--link); font-size: 12px; font-weight: 600; cursor: pointer; }
+.question-answer[open] summary { margin-bottom: 6px; }
 .sidebar-backdrop { display: none; }
 @media (max-width: 950px) {
     .app-shell { grid-template-columns: 250px minmax(0, 1fr); }
