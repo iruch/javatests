@@ -2,27 +2,27 @@
 <html lang="ru" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#f6f8fa">
-    <title>JavaTests — библиотека тестов</title><link rel="stylesheet" th:href="@{/css/site.css}">
+    <title>Java Tests — библиотека тестов</title><link rel="stylesheet" th:href="@{/css/site.css}">
 </head>
 <body>
 <div th:replace="~{fragments/site :: header}"></div>
 <div class="app-shell">
     <div class="sidebar-backdrop" data-menu-close></div><div th:replace="~{fragments/site :: sidebar}"></div>
     <main class="main-content">
-        <div class="breadcrumb"><span>Тесты</span><span class="breadcrumb-separator">/</span><span>Все курсы</span></div>
+        <nav class="breadcrumb" aria-label="Путь"><a th:href="@{/}" aria-current="page">Тесты</a><span class="breadcrumb-separator">/</span><span>Все курсы</span></nav>
         <section class="welcome-panel">
             <div class="welcome-heading"><div><p class="eyebrow">JAVA · SPRING · ПРАКТИКА</p><h1>Подготовка к техническому интервью</h1></div><span class="open-badge"><span></span>Открытый доступ</span></div>
-            <p class="welcome-copy">Курсы по Java и Spring для системной подготовки к техническому интервью.</p>
-            <div class="welcome-meta"><span><strong th:text="${#lists.size(courses)}">2</strong> курса</span><span class="meta-divider"></span><span><strong th:text="${topicCount}">11</strong> тем</span></div>
+            <p class="welcome-copy">Курсы по Java и Spring: выберите курс, тему или урок слева и запустите тестирование.</p>
+            <div class="welcome-meta"><span><strong th:text="${#lists.size(catalog.courses)}">2</strong> курса</span><span class="meta-divider"></span><span><strong th:text="${catalog.topicCount()}">11</strong> тем</span><span class="meta-divider"></span><span><strong th:text="${catalog.questionCount()}">0</strong> вопросов</span></div>
         </section>
         <section class="course-overview" aria-labelledby="courses-title">
-            <div class="section-heading"><div><h2 id="courses-title">Ваши курсы</h2><p>Java Core и Spring Framework</p></div><span class="section-counter" th:text="|${#lists.size(courses)} курса|">2 курса</span></div>
+            <div class="section-heading"><div><h2 id="courses-title">Ваши курсы</h2><p>Java Core и Spring Framework</p></div><span class="section-counter" th:text="|${#lists.size(catalog.courses)} курса|">2 курса</span></div>
             <div class="overview-list">
-                <article class="overview-course" th:each="course : ${courses}"><div class="overview-course-icon" th:classappend="${courseStat.first} ? ' java-icon' : ' spring-icon'" th:text="${courseStat.first} ? 'J' : 'S'">J</div><div class="overview-course-body"><div class="overview-course-title" th:text="${course.title}">Java Core</div><div class="overview-course-subtitle" th:text="|${#lists.size(course.topics)} тем · выберите тему слева|">8 тем · выберите тему слева</div></div><span class="overview-arrow" aria-hidden="true">↗</span></article>
-                <div class="empty-courses" th:if="${#lists.isEmpty(courses)}">Курсы появятся здесь после запуска миграций базы данных.</div>
+                <a class="overview-course" th:each="course : ${catalog.courses}" th:href="@{/courses/{id}(id=${course.id})}"><div class="overview-course-icon" th:classappend="${courseStat.first} ? ' java-icon' : ' spring-icon'" th:text="${courseStat.first} ? 'J' : 'S'">J</div><div class="overview-course-body"><div class="overview-course-title" th:text="${course.title}">Java Core</div><div class="overview-course-subtitle" th:text="|${#lists.size(course.topics)} тем · ${course.questionCount} вопросов|">8 тем · 0 вопросов</div></div><span class="overview-arrow" aria-hidden="true">↗</span></a>
+                <div class="empty-courses" th:if="${#lists.isEmpty(catalog.courses)}">Курсы появятся здесь после запуска миграций базы данных.</div>
             </div>
         </section>
-        <footer class="page-footer"><span>JavaTests</span><span>Материалы для подготовки к собеседованию</span></footer>
+        <footer th:replace="~{fragments/site :: footer}"></footer>
     </main>
 </div><script th:src="@{/js/site.js}" defer></script>
 </body></html>

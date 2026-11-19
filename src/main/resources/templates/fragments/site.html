@@ -5,42 +5,75 @@
     <button class="icon-button menu-toggle" type="button" aria-label="Открыть навигацию" aria-expanded="false" data-menu-toggle>
         <span class="menu-lines" aria-hidden="true"></span>
     </button>
-    <a class="brand" th:href="@{/}" aria-label="JavaTests, главная">
+    <a class="brand" th:href="@{/}" aria-label="Java Tests, главная">
         <span class="brand-mark" aria-hidden="true">JT</span>
-        <span>JavaTests</span>
+        <span>Java Tests</span>
     </a>
-    <div class="topbar-context">Подготовка к собеседованию</div>
+    <div class="topbar-context">Обучение</div>
     <a class="topbar-link" href="https://github.com/iruch/javatests" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a>
 </header>
 
 <aside class="sidebar" th:fragment="sidebar">
     <div class="sidebar-heading">
         <div>Библиотека тестов</div>
-        <span class="course-count" th:text="${#lists.size(courses)}">2</span>
+        <span class="course-count" th:text="${catalog.questionCount()}" title="Всего вопросов">0</span>
     </div>
-    <nav aria-label="Курсы и темы" class="course-tree">
-        <section class="course-node" th:each="course : ${courses}">
-            <details th:open="${courseStat.first}">
+    <nav aria-label="Курсы, темы и уроки" class="course-tree">
+        <section class="course-node" th:each="course : ${catalog.courses}">
+            <details th:open="${scope?.courseId == course.id or (scope == null and courseStat.first)}">
                 <summary class="course-title">
                     <span class="disclosure" aria-hidden="true"></span>
                     <span class="course-dot" aria-hidden="true"></span>
-                    <span class="course-label" th:text="${course.title}">Java Core</span>
-                    <span class="topic-count" th:text="${#lists.size(course.topics)}">8</span>
+                    <a class="course-label" th:href="@{/courses/{id}(id=${course.id})}" th:text="${course.title}"
+                       th:classappend="${scope?.courseId == course.id and scope?.topicId == null} ? ' active' : ''">Java Core</a>
+                    <span class="topic-count" th:text="${course.questionCount}" title="Вопросов в курсе">0</span>
                 </summary>
                 <ul class="topic-list">
                     <li th:each="topic : ${course.topics}">
-                        <a th:href="@{/topics/{id}/quiz(id=${topic.id})}" th:classappend="${selectedTopicId == topic.id} ? ' active' : ''">
+                        <details class="topic-node" th:if="${!#lists.isEmpty(topic.lessons)}" th:open="${scope?.topicId == topic.id}">
+                            <summary class="topic-summary">
+                                <span class="disclosure small" aria-hidden="true"></span>
+                                <a th:href="@{/topics/{id}(id=${topic.id})}"
+                                   th:classappend="${scope?.topicId == topic.id and scope?.lessonId == null} ? ' active' : ''">
+                                    <span class="node-title" th:text="${topic.title}">Основы языка</span>
+                                    <span class="lesson-count" th:text="${topic.questionCount}">0</span>
+                                </a>
+                            </summary>
+                            <ul class="lesson-list">
+                                <li th:each="lesson : ${topic.lessons}">
+                                    <a th:href="@{/lessons/{id}(id=${lesson.id})}"
+                                       th:classappend="${scope?.lessonId == lesson.id} ? ' active' : ''">
+                                        <span class="topic-marker" aria-hidden="true"></span>
+                                        <span class="node-title" th:text="${lesson.title}">Final</span>
+                                        <span class="lesson-count" th:text="${lesson.questionCount}">0</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </details>
+                        <a class="topic-leaf" th:if="${#lists.isEmpty(topic.lessons)}" th:href="@{/topics/{id}(id=${topic.id})}"
+                           th:classappend="${scope?.topicId == topic.id} ? ' active' : ''">
                             <span class="topic-marker" aria-hidden="true"></span>
-                            <span th:text="${topic.title}">Основы языка</span>
+                            <span class="node-title" th:text="${topic.title}">Java Stream API</span>
                             <span class="lesson-count" th:text="${topic.questionCount}">0</span>
                         </a>
                     </li>
                 </ul>
             </details>
         </section>
-        <div class="tree-empty" th:if="${#lists.isEmpty(courses)}">Курсы пока не добавлены</div>
+        <div class="tree-empty" th:if="${#lists.isEmpty(catalog.courses)}">Курсы пока не добавлены</div>
     </nav>
     <div class="sidebar-note"><span class="status-dot" aria-hidden="true"></span><span>Материалы пополняются</span></div>
 </aside>
+
+<nav class="breadcrumb" aria-label="Путь" th:fragment="breadcrumb(crumbs, tail)">
+    <th:block th:each="crumb, it : ${crumbs}">
+        <a th:href="@{${crumb.url}}" th:text="${crumb.title}"
+           th:attr="aria-current=${it.last and tail == null} ? 'page' : null">Тесты</a>
+        <span class="breadcrumb-separator" th:if="${!it.last or tail != null}">/</span>
+    </th:block>
+    <span class="breadcrumb-current" th:if="${tail != null}" th:text="${tail}">Тестирование</span>
+</nav>
+
+<footer class="page-footer" th:fragment="footer"><span>Java Tests</span><span>Материалы для обучения</span></footer>
 </body>
 </html>

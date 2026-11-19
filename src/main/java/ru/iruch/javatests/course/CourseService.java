@@ -1,56 +1,76 @@
 package ru.iruch.javatests.course;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class CourseService {
     private final CourseRepository courseRepository;
-    private final TopicRepository topicRepository;
+    private final LessonRepository lessonRepository;
     private final QuestionRepository questionRepository;
 
-    public CourseService(CourseRepository courseRepository, TopicRepository topicRepository,
+    public CourseService(CourseRepository courseRepository, LessonRepository lessonRepository,
                          QuestionRepository questionRepository) {
         this.courseRepository = courseRepository;
-        this.topicRepository = topicRepository;
+        this.lessonRepository = lessonRepository;
         this.questionRepository = questionRepository;
     }
 
     @Transactional(readOnly = true)
-    public List<CourseView> getCourses() {
-        Map<Long, Long> questionCounts = questionRepository.countActiveByTopic().stream()
-                .collect(Collectors.toMap(QuestionRepository.TopicQuestionCount::getTopicId,
-                        QuestionRepository.TopicQuestionCount::getTotal));
-        return courseRepository.findAllByOrderBySortOrderAsc().stream()
-                .map(course -> new CourseView(course.getId(), course.getSlug(), course.getTitle(), course.getTopics().stream()
-                        .map(topic -> new TopicView(topic.getId(), topic.getTitle(),
-                                questionCounts.getOrDefault(topic.getId(), 0L).intValue()))
-                        .toList()))
-                .toList();
-    }
-
-    public Topic getTopic(long id) {
-        return topicRepository.findWithLessonsById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Topic not found"));
+    public Catalog getCatalog() {
+        Map<Long, Long> questionCounts = questionRepository.countActiveByLesson().stream()
+                .collect(Collectors.toMap(QuestionRepository.LessonQuestionCount::getLessonId,
+                        QuestionRepository.LessonQuestionCount::getTotal));
+        Map<Long, List<Catalog.LessonView>> lessonsByTopic = lessonRepository.findAllByActiveTrueOrderBySortOrderAsc().stream()
+                .collect(Collectors.groupingBy(lesson -> lesson.getTopic().getId(),
+                        Collectors.mapping(lesson -> new Catalog.LessonView(lesson.getId(), lesson.getTitle(),
+                                questionCounts.getOrDefault(lesson.getId(), 0L).intValue()), Collectors.toList())));
+        return new Catalog(courseRepository.findAllByOrderBySortOrderAsc().stream()
+                .map(course -> {
+                    List<Catalog.TopicView> topics = course.getTopics().stream()
+                            .map(topic -> {
+                                List<Catalog.LessonView> lessons = lessonsByTopic.getOrDefault(topic.getId(), List.of());
+                                return new Catalog.TopicView(topic.getId(), topic.getTitle(),
+                                        lessons.stream().mapToInt(Catalog.LessonView::questionCount).sum(), lessons);
+                            })
+                            .toList();
+                    return new Catalog.CourseView(course.getId(), course.getSlug(), course.getTitle(),
+                            topics.stream().mapToInt(Catalog.TopicView::questionCount).sum(), topics);
+                })
+                .toList());
     }
 
     @Transactional(readOnly = true)
-    public List<QuestionView> getRandomizedQuestions(Topic topic) {
-        List<QuestionView> questions = new ArrayList<>(questionRepository.findActiveByTopicId(topic.getId()).stream()
-                .map(q -> new QuestionView(q.getId(), q.getLesson().getTitle(), q.getQuestionText(), q.getAnswerText()))
-                .toList());
-        Collections.shuffle(questions);
-        return questions;
+    public List<QuestionView> getQuestions(ScopeType type, long id) {
+        List<Question> questions = switch (type) {
+            case COURSE -> questionRepository.findActiveByCourseId(id);
+            case TOPIC -> questionRepository.findActiveByTopicId(id);
+            case LESSON -> questionRepository.findActiveByLessonId(id);
+        };
+        return questions.stream().map(QuestionView::of).toList();
     }
 
-    public record CourseView(Long id, String slug, String title, List<TopicView> topics) {}
-    public record TopicView(Long id, String title, int questionCount) {}
-    public record QuestionView(Long id, String lesson, String question, String answer) {}
+    /** Shuffled questions of the scope; {@code limit} outside 1..size means "all of them". */
+    @Transactional(readOnly = true)
+    public List<QuestionView> getRandomizedQuestions(ScopeType type, long id, Integer limit) {
+        List<QuestionView> questions = new ArrayList<>(getQuestions(type, id));
+        Collections.shuffle(questions);
+        if (limit == null || limit <= 0 || limit >= questions.size()) {
+            return questions;
+        }
+        return List.copyOf(questions.subList(0, limit));
+    }
+
+    public record QuestionView(Long id, String topic, String lesson, String question, String answer) {
+        static QuestionView of(Question question) {
+            return new QuestionView(question.getId(), question.getLesson().getTopic().getTitle(),
+                    question.getLesson().getTitle(), question.getQuestionText(), question.getAnswerText());
+        }
+    }
 }

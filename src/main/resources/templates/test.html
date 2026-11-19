@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#f6f8fa">
+    <title th:text="|Тестирование: ${scope.title} — Java Tests|">Тестирование — Java Tests</title><link rel="stylesheet" th:href="@{/css/site.css}">
+</head>
+<body>
+<div th:replace="~{fragments/site :: header}"></div>
+<div class="app-shell"><div class="sidebar-backdrop" data-menu-close></div><div th:replace="~{fragments/site :: sidebar}"></div>
+    <main class="main-content">
+        <nav th:replace="~{fragments/site :: breadcrumb(${scope.crumbs}, 'Тестирование')}"></nav>
+        <section class="quiz-heading">
+            <div>
+                <p class="eyebrow">Тестирование</p>
+                <h1 th:text="${scope.title}">Основы языка</h1>
+                <p class="quiz-description" th:text="|${#lists.size(test.questions)} вопросов · 2 минуты на каждый · время вопроса идёт, пока он открыт|">Описание</p>
+            </div>
+            <div class="quiz-count"><span class="count-number" th:text="${#lists.size(test.questions)}">0</span><span>вопросов</span></div>
+        </section>
+
+        <noscript><div class="wizard-card wizard-result"><h2>Нужен JavaScript</h2><p>Мастер тестирования работает в браузере: включите JavaScript и обновите страницу.</p></div></noscript>
+
+        <div class="wizard-card wizard-result" th:if="${#lists.isEmpty(test.questions)}">
+            <h2>Вопросы готовятся</h2><p>В этом разделе пока нет вопросов для тестирования.</p>
+            <a class="back-link" th:href="@{${test.backUrl}}"><span aria-hidden="true">←</span> Назад к разделу</a>
+        </div>
+
+        <section class="wizard-card" data-wizard hidden th:if="${!#lists.isEmpty(test.questions)}"
+                 th:attr="data-prompt-url=@{/prompts/java-test-agent.md}">
+            <header class="wizard-head">
+                <div class="wizard-step">Вопрос <strong data-current>1</strong> из <strong data-total>1</strong></div>
+                <div class="wizard-timer" data-timer aria-live="off" title="Осталось времени на этот вопрос">02:00</div>
+            </header>
+            <div class="wizard-progress" aria-hidden="true"><span data-progress></span></div>
+            <div class="wizard-body">
+                <span class="question-lesson" data-lesson>Урок</span>
+                <h2 class="wizard-question" data-question>Вопрос</h2>
+                <div class="wizard-answer-tools">
+                    <button class="link-button" type="button" data-toggle-answer>Показать ответ</button>
+                    <span class="viewed-badge" data-viewed hidden>Ответ просмотрен</span>
+                </div>
+                <div class="reference-answer" data-reference hidden><p data-reference-text></p></div>
+                <label class="answer-label" for="user-answer">Ваш ответ</label>
+                <textarea id="user-answer" class="answer-input" rows="8" data-answer
+                          placeholder="Ответьте своими словами, как на собеседовании"></textarea>
+            </div>
+            <footer class="wizard-nav">
+                <button class="secondary-button" type="button" data-prev>Назад</button>
+                <button class="primary-button" type="button" data-next>Далее</button>
+                <button class="primary-button" type="button" data-submit hidden>Сдать тест</button>
+            </footer>
+        </section>
+
+        <section class="wizard-card wizard-result failed" data-failed hidden>
+            <div class="result-mark" aria-hidden="true">✕</div>
+            <h2>Не сдан</h2>
+            <p data-failed-reason>Время на вопрос истекло. Тест сброшен.</p>
+            <div class="result-actions">
+                <a class="primary-button" href="" data-restart>Пройти заново</a>
+                <a class="secondary-button" th:href="@{${test.backUrl}}">К вопросам раздела</a>
+            </div>
+        </section>
+
+        <section class="wizard-card wizard-result finished" data-finished hidden>
+            <div class="result-mark" aria-hidden="true">✓</div>
+            <h2>Тест сдан на проверку</h2>
+            <div class="result-stats" data-stats></div>
+            <p>Скачаны два файла: инструкция для ИИ-агента и ваши ответы. Загрузите оба в чат с любым ИИ-ассистентом и отправьте: он посчитает процент верных ответов, покажет ошибки и подробно разберёт каждый вопрос.</p>
+            <div class="result-actions">
+                <button class="primary-button" type="button" data-download-prompt>Скачать промпт (.md)</button>
+                <button class="secondary-button" type="button" data-download-result>Скачать ответы (.json)</button>
+            </div>
+            <div class="result-actions">
+                <a class="back-link" href="" data-restart>Пройти ещё раз</a>
+                <a class="back-link" th:href="@{${test.backUrl}}">К вопросам раздела</a>
+            </div>
+        </section>
+
+        <footer th:replace="~{fragments/site :: footer}"></footer>
+    </main>
+</div>
+<script th:inline="javascript">window.JAVA_TEST = /*[[${test}]]*/ null;</script>
+<script th:src="@{/js/site.js}" defer></script>
+<script th:src="@{/js/test.js}" defer></script>
+</body></html>

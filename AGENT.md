@@ -1,20 +1,35 @@
-# JavaTests project contracts
+# Java Tests project contracts
 
 ## Product
 
-JavaTests is a public, unauthenticated learning site. The left navigation exposes a
-collapsible hierarchy of courses and topics. Selecting a topic opens its quiz in the
-main area: all active questions of the topic's lessons, shuffled, each with a collapsible
-answer.
+Java Tests is a public, unauthenticated learning site. The left navigation is a collapsible
+tree `course -> topic -> lesson`, each node with its
+active question count. Selecting any node opens a section page: linked breadcrumbs
+(`Тесты / Java Core / Основы языка / Final`), the total question count of the node, its child
+sections and its question bank (ordered, answers collapsible).
+
+Every section has a "Начать тестирование" launcher (10 / 20 / 50 / all random questions). The
+test is a client-side wizard (`static/js/test.js`): one question per step, "Назад" / "Далее",
+"Сдать тест" on the last step. Each question has its own 2-minute budget that runs only while
+the question is open; when any budget hits zero the test is reset and shows "Не сдан".
+"Показать ответ" reveals the reference answer without blocking and marks the question with an
+orange "Ответ просмотрен" badge. Submitting downloads two files for an external AI agent:
+`JavaTestAgent_<dd.mm.yyyy>.md` (grading instructions, template in
+`static/prompts/java-test-agent.md`) and `JavaTestResult_<dd.mm.yyyy>.json` (question, user
+answer, answer viewed, reference answer, time spent). Nothing is stored server-side.
 
 ## HTTP contract
 
-- `GET /` renders the public course navigator and an empty-state panel.
-- `GET /topics/{topicId}/quiz` renders a topic quiz page.
-- `GET /api/topics/{topicId}/quiz` returns `{ topicId, topic, questions, total }` where each
-  question is `{ id, lesson, question, answer }`; questions are shuffled on every request.
+- `GET /` renders the course navigator and an overview.
+- `GET /courses/{id}`, `GET /topics/{id}`, `GET /lessons/{id}` render a section page.
+- `GET /{courses|topics|lessons}/{id}/test?limit=N` renders the test wizard with N random
+  questions of the section (missing or out-of-range `limit` means all).
+- `GET /topics/{id}/quiz` redirects to `/topics/{id}` (old URL).
+- `GET /api/{courses|topics|lessons}/{id}/quiz?limit=N` returns
+  `{ scope, id, title, questions, total }` where each question is
+  `{ id, topic, lesson, question, answer }`; questions are shuffled on every request.
   The endpoint is read-only and public.
-- Unknown course/topic ids return HTTP 404.
+- Unknown ids, and inactive lessons, return HTTP 404.
 - The application listens on port `8097` by default.
 
 ## Data contract
@@ -30,7 +45,8 @@ answer.
 ## Content sources
 
 - Each topic's questions are seeded by its own migration (e.g.
-  `V3__seed_java_core_basics_questions.sql` for Java Core / Основы языка). The migration
+  `V3__seed_java_core_basics_questions.sql` for Java Core / Основы языка,
+  `V4__seed_java_core_internals_questions.sql` for Особенности внутренней работы Java). The migration
   fills temp tables `seed_lessons` / `seed_questions` and fails if a question references an
   unknown lesson or a lesson has no questions.
 
