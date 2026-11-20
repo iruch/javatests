@@ -6,6 +6,7 @@
     const $ = (selector, root = document) => root.querySelector(selector);
     const questions = data.questions;
     const limitMs = data.secondsPerQuestion * 1000;
+    const saveUrl = wizard.dataset.saveUrl;
     const state = {
         index: 0,
         answers: questions.map(() => ''),
@@ -35,27 +36,20 @@
         submit: $('[data-submit]', wizard),
         failed: $('[data-failed]'),
         failedReason: $('[data-failed-reason]'),
+        failedSaved: $('[data-failed-saved]'),
         finished: $('[data-finished]'),
+        saveStatus: $('[data-save-status]'),
         stats: $('[data-stats]'),
+        saved: $('[data-saved]'),
+        saveError: $('[data-save-error]'),
+        retry: $('[data-retry-save]'),
     };
-
-    let promptTemplate = null;
-    fetch(wizard.dataset.promptUrl)
-        .then((response) => (response.ok ? response.text() : Promise.reject(response.status)))
-        .then((text) => { promptTemplate = text; })
-        .catch(() => { promptTemplate = null; });
 
     document.querySelectorAll('[data-restart]').forEach((link) => { link.href = window.location.href; });
 
     const formatClock = (ms) => {
         const total = Math.max(0, Math.ceil(ms / 1000));
         return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
-    };
-
-    const formatDuration = (ms) => {
-        const total = Math.round(ms / 1000);
-        const minutes = Math.floor(total / 60);
-        return minutes ? `${minutes} мин ${total % 60} с` : `${total % 60} с`;
     };
 
     const tick = () => {
@@ -85,7 +79,7 @@
         el.current.textContent = String(i + 1);
         el.total.textContent = String(questions.length);
         el.progress.style.width = `${((i + 1) / questions.length) * 100}%`;
-        el.lesson.textContent = q.topic === q.lesson ? q.lesson : `${q.topic} · ${q.lesson}`;
+        el.lesson.textContent = `${q.topic} · ${q.lesson}`;
         el.question.textContent = q.question;
         el.referenceText.textContent = q.answer;
         el.reference.hidden = true;
@@ -108,98 +102,58 @@
         wizard.scrollIntoView({ block: 'start', behavior: 'smooth' });
     };
 
+    function confirmLeave(event) {
+        event.preventDefault();
+        event.returnValue = '';
+    }
+
     const stop = () => {
         state.running = false;
         clearInterval(state.timerId);
         window.removeEventListener('beforeunload', confirmLeave);
     };
 
+    const payload = (status, failedIndex) => ({
+        scope: data.scope,
+        scopeId: data.scopeId,
+        status,
+        startedAt: state.startedAt.toISOString(),
+        finishedAt: new Date().toISOString(),
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        failedQuestionNumber: failedIndex === undefined ? null : failedIndex + 1,
+        answers: questions.map((q, i) => ({
+            questionId: q.id,
+            userAnswer: state.answers[i],
+            answerViewed: state.viewed[i],
+            timeSpentSec: Math.round(state.spentMs[i] / 1000),
+        })),
+    });
+
+    const post = (body) => fetch(saveUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        keepalive: true,
+    }).then((response) => (response.ok ? response.json() : Promise.reject(new Error(`HTTP ${response.status}`))));
+
     const fail = (index) => {
         stop();
+        const body = payload('FAILED', index);
         state.answers = questions.map(() => '');
         wizard.hidden = true;
         el.failedReason.textContent = `Время на вопрос ${index + 1} из ${questions.length} истекло (2 минуты). Тест сброшен, ответы не сохранены.`;
         el.failed.hidden = false;
         el.failed.scrollIntoView({ block: 'start' });
+        post(body).then(() => { el.failedSaved.hidden = false; }).catch(() => {});
     };
 
-    const pad = (n) => String(n).padStart(2, '0');
-    const fileDate = (date) => `${pad(date.getDate())}.${pad(date.getMonth() + 1)}.${date.getFullYear()}`;
-
-    const buildResult = (finishedAt) => ({
-        test: {
-            title: data.title,
-            date: fileDate(finishedAt),
-            startedAt: state.startedAt.toISOString(),
-            finishedAt: finishedAt.toISOString(),
-            questionCount: questions.length,
-            secondsPerQuestion: data.secondsPerQuestion,
-        },
-        summary: {
-            answered: state.answers.filter((a) => a.trim()).length,
-            unanswered: state.answers.filter((a) => !a.trim()).length,
-            answerViewed: state.viewed.filter(Boolean).length,
-            totalTimeSec: Math.round(state.spentMs.reduce((sum, ms) => sum + ms, 0) / 1000),
-        },
-        answers: questions.map((q, i) => ({
-            number: i + 1,
-            topic: q.topic,
-            lesson: q.lesson,
-            question: q.question,
-            userAnswer: state.answers[i].trim(),
-            answerViewed: state.viewed[i],
-            referenceAnswer: q.answer,
-            timeSpentSec: Math.round(state.spentMs[i] / 1000),
-        })),
-    });
-
-    const buildPrompt = (result, resultFile) => {
-        const values = {
-            date: result.test.date,
-            scope: result.test.title,
-            questionCount: String(result.test.questionCount),
-            answered: String(result.summary.answered),
-            viewed: String(result.summary.answerViewed),
-            resultFile,
-        };
-        const template = promptTemplate
-            || '# JavaTestAgent\n\nПроверь ответы кандидата из файла `{{resultFile}}`: посчитай процент верных, частичных и неверных ответов, покажи ошибки, как надо было ответить, и подробно разбери каждый вопрос.\n';
-        return template.replace(/\{\{(\w+)\}\}/g, (match, key) => (key in values ? values[key] : match));
-    };
-
-    const download = (name, content, type) => {
-        const url = URL.createObjectURL(new Blob([content], { type }));
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = name;
-        document.body.append(link);
-        link.click();
-        link.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 2000);
-    };
-
-    const submit = () => {
-        tick();
-        if (!state.running) return;
-        state.answers[state.index] = el.answer.value;
-        const empty = state.answers.filter((a) => !a.trim()).length;
-        if (empty && !window.confirm(`Без ответа: ${empty} из ${questions.length}. Всё равно сдать тест?`)) return;
-        stop();
-
-        const finishedAt = new Date();
-        const stamp = fileDate(finishedAt);
-        const promptFile = `JavaTestAgent_${stamp}.md`;
-        const resultFile = `JavaTestResult_${stamp}.json`;
-        const result = buildResult(finishedAt);
-        const prompt = buildPrompt(result, resultFile);
-        const json = JSON.stringify(result, null, 2);
-
+    const showStats = (attempt) => {
         const stats = [
-            ['Вопросов', result.test.questionCount],
-            ['С ответом', result.summary.answered],
-            ['Без ответа', result.summary.unanswered],
-            ['Ответ просмотрен', result.summary.answerViewed],
-            ['Время', formatDuration(result.summary.totalTimeSec * 1000)],
+            ['Вопросов', attempt.questionCount],
+            ['С ответом', attempt.answered],
+            ['Без ответа', attempt.skipped],
+            ['Ответ просмотрен', attempt.viewed],
+            ['Время', attempt.totalTime],
         ];
         el.stats.replaceChildren(...stats.map(([label, value]) => {
             const item = document.createElement('div');
@@ -210,20 +164,41 @@
             item.append(strong, caption);
             return item;
         }));
-        $('[data-download-prompt]').onclick = () => download(promptFile, prompt, 'text/markdown;charset=utf-8');
-        $('[data-download-result]').onclick = () => download(resultFile, json, 'application/json;charset=utf-8');
+    };
 
+    const save = (body) => {
+        el.saveStatus.textContent = 'Сохраняю результат в историю…';
+        el.saveStatus.hidden = false;
+        el.saveError.hidden = true;
+        post(body)
+            .then((result) => {
+                showStats(result.attempt);
+                document.querySelectorAll('[data-download-variant]').forEach((button) => {
+                    button.dataset.downloadFiles = result.downloads[button.dataset.downloadVariant];
+                });
+                document.querySelectorAll('[data-history-link]').forEach((link) => { link.href = result.historyUrl; });
+                el.saveStatus.hidden = true;
+                el.saved.hidden = false;
+            })
+            .catch(() => {
+                el.saveStatus.hidden = true;
+                el.saveError.hidden = false;
+                el.retry.onclick = () => save(body);
+            });
+    };
+
+    const submit = () => {
+        tick();
+        if (!state.running) return;
+        state.answers[state.index] = el.answer.value;
+        const empty = state.answers.filter((a) => !a.trim()).length;
+        if (empty && !window.confirm(`Без ответа: ${empty} из ${questions.length}. Всё равно сдать тест?`)) return;
+        stop();
         wizard.hidden = true;
         el.finished.hidden = false;
         el.finished.scrollIntoView({ block: 'start' });
-        download(promptFile, prompt, 'text/markdown;charset=utf-8');
-        setTimeout(() => download(resultFile, json, 'application/json;charset=utf-8'), 400);
+        save(payload('SUBMITTED'));
     };
-
-    function confirmLeave(event) {
-        event.preventDefault();
-        event.returnValue = '';
-    }
 
     el.toggleAnswer.addEventListener('click', () => {
         const show = el.reference.hidden;

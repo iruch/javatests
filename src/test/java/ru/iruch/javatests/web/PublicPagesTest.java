@@ -44,9 +44,9 @@ class PublicPagesTest {
         mvc.perform(get("/"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("index"))
-                .andExpect(content().string(containsString("Java Tests")))
-                .andExpect(content().string(containsString("Обучение")))
-                .andExpect(content().string(not(containsString("Подготовка к собеседованию"))))
+                .andExpect(content().string(containsString("Java-тесты для Study Hub")))
+                .andExpect(content().string(containsString("href=\"/history\"")))
+                .andExpect(content().string(containsString("Справка по использованию")))
                 .andExpect(content().string(containsString("/courses/1")))
                 .andExpect(content().string(containsString("/topics/11")))
                 .andExpect(content().string(containsString("/lessons/101")));
@@ -100,7 +100,7 @@ class PublicPagesTest {
                 .andExpect(content().string(containsString("\"secondsPerQuestion\":120")))
                 .andExpect(content().string(containsString("\"lesson\":\"Final\"")))
                 .andExpect(content().string(containsString("Сдать тест")))
-                .andExpect(content().string(containsString("/prompts/java-test-agent.md")));
+                .andExpect(content().string(containsString("data-save-url=\"/api/test-attempts\"")));
     }
 
     @Test

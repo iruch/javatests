@@ -78,6 +78,8 @@ public record Catalog(List<CourseView> courses) {
 
         public String testUrl() { return url() + "/test"; }
 
+        public String courseTitle() { return crumbs.get(1).title(); }
+
         public String path() {
             return String.join(" / ", crumbs.stream().skip(1).map(Crumb::title).toList());
         }

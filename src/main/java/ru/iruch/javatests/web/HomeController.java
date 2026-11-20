@@ -7,13 +7,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import ru.iruch.javatests.course.CourseService;
 import ru.iruch.javatests.course.ScopeType;
+import ru.iruch.javatests.history.TestHistoryService;
 
 import java.util.List;
 
 @Controller
 public class HomeController {
-    static final int SECONDS_PER_QUESTION = 120;
-
     private final CourseService courseService;
 
     public HomeController(CourseService courseService) { this.courseService = courseService; }
@@ -43,7 +42,7 @@ public class HomeController {
         var questions = courseService.getRandomizedQuestions(type, id, limit);
         model.addAttribute("catalog", catalog);
         model.addAttribute("scope", scope);
-        model.addAttribute("test", new TestView(scope.path(), scope.url(), SECONDS_PER_QUESTION, questions));
+        model.addAttribute("test", new TestView(scope.path(), type.segment(), id, scope.url(), TestHistoryService.SECONDS_PER_QUESTION, questions));
         return "test";
     }
 
@@ -52,6 +51,6 @@ public class HomeController {
         return "redirect:" + ScopeType.TOPIC.url(id);
     }
 
-    public record TestView(String title, String backUrl, int secondsPerQuestion,
+    public record TestView(String title, String scope, long scopeId, String backUrl, int secondsPerQuestion,
                            List<CourseService.QuestionView> questions) {}
 }

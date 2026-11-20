@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#f6f8fa">
+    <script th:replace="~{fragments/site :: theme-init}"></script>
+    <title>Справка по использованию — Java-тесты для Study Hub</title><link rel="stylesheet" th:href="@{/css/site.css}">
+</head>
+<body>
+<div th:replace="~{fragments/site :: header}"></div>
+<div class="app-shell"><div class="sidebar-backdrop" data-menu-close></div><div th:replace="~{fragments/site :: sidebar}"></div>
+    <main class="main-content">
+        <nav class="breadcrumb" aria-label="Путь"><a th:href="@{/}">Тесты</a><span class="breadcrumb-separator">/</span><span class="breadcrumb-current">Справка по использованию</span></nav>
+        <article class="markdown-body" th:utext="${helpHtml}">README</article>
+        <footer th:replace="~{fragments/site :: footer}"></footer>
+    </main>
+</div><script th:src="@{/js/site.js}" defer></script>
+</body></html>

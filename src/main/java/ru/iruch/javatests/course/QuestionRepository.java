@@ -2,6 +2,7 @@ package ru.iruch.javatests.course;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import java.util.Collection;
 import java.util.List;
 
 public interface QuestionRepository extends JpaRepository<Question, Long> {
@@ -25,6 +26,9 @@ public interface QuestionRepository extends JpaRepository<Question, Long> {
             order by q.sortOrder
             """)
     List<Question> findActiveByLessonId(long lessonId);
+
+    @Query("select q from Question q join fetch q.lesson l join fetch l.topic t where q.id in :ids")
+    List<Question> findAllWithLessonByIdIn(Collection<Long> ids);
 
     @Query("""
             select l.id as lessonId, count(q) as total from Question q join q.lesson l

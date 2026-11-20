@@ -2,7 +2,8 @@
 <html lang="ru" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#f6f8fa">
-    <title th:text="|Тестирование: ${scope.title} — Java Tests|">Тестирование — Java Tests</title><link rel="stylesheet" th:href="@{/css/site.css}">
+    <script th:replace="~{fragments/site :: theme-init}"></script>
+    <title th:text="|Тестирование: ${scope.title} — Java-тесты для Study Hub|">Тестирование — Java-тесты для Study Hub</title><link rel="stylesheet" th:href="@{/css/site.css}">
 </head>
 <body>
 <div th:replace="~{fragments/site :: header}"></div>
@@ -26,7 +27,7 @@
         </div>
 
         <section class="wizard-card" data-wizard hidden th:if="${!#lists.isEmpty(test.questions)}"
-                 th:attr="data-prompt-url=@{/prompts/java-test-agent.md}">
+                 th:attr="data-save-url=@{/api/test-attempts}">
             <header class="wizard-head">
                 <div class="wizard-step">Вопрос <strong data-current>1</strong> из <strong data-total>1</strong></div>
                 <div class="wizard-timer" data-timer aria-live="off" title="Осталось времени на этот вопрос">02:00</div>
@@ -55,6 +56,7 @@
             <div class="result-mark" aria-hidden="true">✕</div>
             <h2>Не сдан</h2>
             <p data-failed-reason>Время на вопрос истекло. Тест сброшен.</p>
+            <p class="saved-note" data-failed-saved hidden>Попытка записана в «Мою историю тестирования».</p>
             <div class="result-actions">
                 <a class="primary-button" href="" data-restart>Пройти заново</a>
                 <a class="secondary-button" th:href="@{${test.backUrl}}">К вопросам раздела</a>
@@ -64,13 +66,21 @@
         <section class="wizard-card wizard-result finished" data-finished hidden>
             <div class="result-mark" aria-hidden="true">✓</div>
             <h2>Тест сдан на проверку</h2>
+            <p data-save-status>Сохраняю результат в историю…</p>
             <div class="result-stats" data-stats></div>
-            <p>Скачаны два файла: инструкция для ИИ-агента и ваши ответы. Загрузите оба в чат с любым ИИ-ассистентом и отправьте: он посчитает процент верных ответов, покажет ошибки и подробно разберёт каждый вопрос.</p>
-            <div class="result-actions">
-                <button class="primary-button" type="button" data-download-prompt>Скачать промпт (.md)</button>
-                <button class="secondary-button" type="button" data-download-result>Скачать ответы (.json)</button>
+            <div class="saved-block" data-saved hidden>
+                <p>Каждая кнопка скачивает два файла: инструкцию для ИИ-агента (.md) и ваши ответы (.json). Загрузите оба в чат с любым ИИ-ассистентом и отправьте. <strong>Полный</strong> разбор подробно объясняет каждый вопрос, <strong>упрощенный</strong> коротко даёт правильный ответ и объясняет, почему ваш неверен.</p>
+                <div class="result-actions">
+                    <button class="primary-button" type="button" data-download-variant="full">Скачать результат (полный)</button>
+                    <button class="secondary-button" type="button" data-download-variant="short">Скачать результат (упрощенный)</button>
+                </div>
+            </div>
+            <div class="save-error" data-save-error hidden>
+                <p>Не удалось сохранить результат. Ответы пока в этой вкладке: не закрывайте её и попробуйте ещё раз.</p>
+                <button class="primary-button" type="button" data-retry-save>Повторить сохранение</button>
             </div>
             <div class="result-actions">
+                <a class="back-link" th:href="@{/history}" data-history-link>Моя история тестирования</a>
                 <a class="back-link" href="" data-restart>Пройти ещё раз</a>
                 <a class="back-link" th:href="@{${test.backUrl}}">К вопросам раздела</a>
             </div>
