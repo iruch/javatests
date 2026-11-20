@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#f6f8fa">
+    <script th:replace="~{fragments/site :: theme-init}"></script>
+    <title>Моя история тестирования — Java-тесты для Study Hub</title><link rel="stylesheet" th:href="@{/css/site.css}">
+</head>
+<body>
+<div th:replace="~{fragments/site :: header}"></div>
+<div class="app-shell"><div class="sidebar-backdrop" data-menu-close></div><div th:replace="~{fragments/site :: sidebar}"></div>
+    <main class="main-content wide">
+        <nav class="breadcrumb" aria-label="Путь"><a th:href="@{/}">Тесты</a><span class="breadcrumb-separator">/</span><span class="breadcrumb-current">Моя история тестирования</span></nav>
+        <section class="quiz-heading">
+            <div>
+                <p class="eyebrow">История</p>
+                <h1>Моя история тестирования</h1>
+                <p class="quiz-description">Все тесты, сданные в этой песочнице. Нажмите на строку, чтобы увидеть вопросы, ответы и скачать результат для ИИ-агента.</p>
+            </div>
+            <div class="quiz-count"><span class="count-number" th:text="${#lists.size(attempts)}">0</span><span>тестов</span></div>
+        </section>
+
+        <p class="flash-notice" role="status" th:if="${deletedNotice != null}" th:text="${deletedNotice}">Тест удалён</p>
+
+        <div class="quiz-content quiz-empty" th:if="${#lists.isEmpty(attempts)}">
+            <div class="empty-symbol" aria-hidden="true">?</div>
+            <h2>Тестов пока нет</h2>
+            <p>Выберите курс, тему или урок слева и нажмите «Начать тестирование». Сданный тест появится здесь.</p>
+            <a class="back-link" th:href="@{/}"><span aria-hidden="true">←</span> К списку курсов</a>
+        </div>
+
+        <div class="history-table-wrap" th:if="${!#lists.isEmpty(attempts)}">
+            <table class="history-table">
+                <thead>
+                <tr>
+                    <th scope="col"><span class="visually-hidden">Развернуть</span></th>
+                    <th scope="col">Дата</th>
+                    <th scope="col">Что тестировали</th>
+                    <th scope="col">Статус</th>
+                    <th scope="col" class="num">Вопросов</th>
+                    <th scope="col" class="num">Ответил</th>
+                    <th scope="col" class="num">Пропустил</th>
+                    <th scope="col" class="num">Подсмотрел</th>
+                    <th scope="col" class="num">Время</th>
+                    <th scope="col"><span class="visually-hidden">Удаление</span></th>
+                </tr>
+                </thead>
+                <tbody th:each="a : ${attempts}" class="history-entry">
+                <tr class="history-row" tabindex="0" aria-expanded="false" th:id="|attempt-${a.id}|"
+                    th:attr="data-history-toggle=|attempt-${a.id}-details|">
+                    <td><span class="disclosure" aria-hidden="true"></span></td>
+                    <td class="nowrap"><strong th:text="${a.date}">20.11.2026</strong> <span class="muted" th:text="${a.time}">14:05</span></td>
+                    <td><span class="history-course" th:text="${a.courseTitle}">Java Core</span><span th:text="${a.scopePath}">Java Core / Основы языка</span></td>
+                    <td><span class="status-badge" th:classappend="${a.failed} ? ' failed' : ' submitted'" th:text="${a.statusLabel}">Сдан</span></td>
+                    <td class="num" th:text="${a.questionCount}">20</td>
+                    <td class="num" th:text="${a.answered}">18</td>
+                    <td class="num" th:text="${a.skipped}">2</td>
+                    <td class="num" th:text="${a.viewed}">1</td>
+                    <td class="num nowrap" th:text="${a.totalTime}">12 мин 3 с</td>
+                    <td class="actions">
+                        <form method="post" th:action="@{/history/{id}/delete(id=${a.id})}"
+                              th:attr="data-confirm=|Удалить тест от ${a.date} ${a.time} (${a.scopePath})? Вопросы, ответы и файлы результата будут удалены из базы без возможности восстановления.|">
+                            <button class="delete-button" type="submit" th:attr="aria-label=|Удалить тест от ${a.date} ${a.time}|">
+                                Удалить
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                <tr class="history-details" th:id="|attempt-${a.id}-details|" hidden>
+                    <td colspan="10">
+                        <dl class="history-facts">
+                            <div><dt>Курс</dt><dd th:text="${a.courseTitle}">Java Core</dd></div>
+                            <div><dt>Раздел</dt><dd><a th:href="@{${a.scopeUrl}}" th:text="${a.scopePath}">Java Core / Основы языка</a></dd></div>
+                            <div class="wide"><dt>Темы и уроки</dt><dd th:text="${a.coveredSections}">Основы языка: ООП, Final</dd></div>
+                            <div><dt>Начат</dt><dd th:text="${a.startedAt}">20.11.2026 13:50:00</dd></div>
+                            <div><dt>Завершён</dt><dd th:text="${a.finishedAt}">20.11.2026 14:05:00</dd></div>
+                            <div><dt>Часовой пояс</dt><dd th:text="${a.timeZone}">Europe/Moscow</dd></div>
+                            <div><dt>Лимит</dt><dd th:text="|${a.minutesPerQuestion} мин на вопрос|">2 мин на вопрос</dd></div>
+                        </dl>
+
+                        <p class="history-failed" th:if="${a.failed}"
+                           th:text="|Время на вопрос ${a.failedQuestionNumber} из ${a.questionCount} истекло, тест сброшен. Ответы такой попытки не сохраняются.|">Время истекло</p>
+
+                        <div class="history-downloads" th:if="${!a.failed}">
+                            <button class="primary-button" type="button"
+                                    th:attr="data-download-files=@{/history/{id}/download/full(id=${a.id})}">Скачать результат (полный)</button>
+                            <button class="secondary-button" type="button"
+                                    th:attr="data-download-files=@{/history/{id}/download/short(id=${a.id})}">Скачать результат (упрощенный)</button>
+                            <span class="muted">Каждая кнопка скачивает .md и .json</span>
+                        </div>
+
+                        <ol class="history-answers" th:if="${!#lists.isEmpty(a.answers)}">
+                            <li th:each="ans : ${a.answers}">
+                                <div class="history-answer-head">
+                                    <span class="question-number" th:text="${ans.number}">1</span>
+                                    <div>
+                                        <span class="question-lesson" th:text="|${ans.topic} · ${ans.lesson}|">Основы языка · Final</span>
+                                        <h3 th:text="${ans.question}">Вопрос</h3>
+                                    </div>
+                                </div>
+                                <div class="history-answer-body">
+                                    <div class="history-answer-meta">
+                                        <span th:text="|Время: ${ans.timeSpent}|">Время: 40 с</span>
+                                        <span class="viewed-badge" th:if="${ans.viewed}">Ответ просмотрен</span>
+                                    </div>
+                                    <p class="user-answer" th:if="${!#strings.isEmpty(ans.userAnswer)}" th:text="${ans.userAnswer}">Ответ</p>
+                                    <p class="user-answer empty" th:if="${#strings.isEmpty(ans.userAnswer)}">Нет ответа</p>
+                                    <details class="question-answer"><summary>Эталонный ответ</summary><p th:text="${ans.reference}">Эталон</p></details>
+                                </div>
+                            </li>
+                        </ol>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <footer th:replace="~{fragments/site :: footer}"></footer>
+    </main>
+</div><script th:src="@{/js/site.js}" defer></script>
+</body></html>

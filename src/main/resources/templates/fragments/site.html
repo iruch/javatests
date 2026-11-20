@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<body>
+<script th:fragment="theme-init">
+    (function () {
+        var theme = null;
+        try { theme = localStorage.getItem("javatests-theme"); } catch (e) {}
+        if (theme !== "dark" && theme !== "light") {
+            theme = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+        document.documentElement.dataset.theme = theme;
+    })();
+</script>
+
+<header class="topbar" th:fragment="header">
+    <button class="icon-button menu-toggle" type="button" aria-label="Открыть навигацию" aria-expanded="false" data-menu-toggle>
+        <span class="menu-lines" aria-hidden="true"></span>
+    </button>
+    <a class="brand" th:href="@{/}" aria-label="Java-тесты для Study Hub, главная">
+        <span class="brand-mark" aria-hidden="true">JT</span>
+        <span class="brand-name">Java-тесты для Study Hub</span>
+    </a>
+    <nav class="topbar-nav" aria-label="Разделы сайта">
+        <a th:href="@{/history}" th:classappend="${activeNav == 'history'} ? ' active' : ''"
+           th:attr="aria-current=${activeNav == 'history'} ? 'page' : null">
+            <span class="label-full">Моя история тестирования</span><span class="label-short">История</span>
+        </a>
+        <a th:href="@{/help}" th:classappend="${activeNav == 'help'} ? ' active' : ''"
+           th:attr="aria-current=${activeNav == 'help'} ? 'page' : null">
+            <span class="label-full">Справка по использованию</span><span class="label-short">Справка</span>
+        </a>
+    </nav>
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Включить тёмную тему" title="Включить тёмную тему">
+        <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.6A8.5 8.5 0 0 1 9.4 3.5a8.5 8.5 0 1 0 11.1 11.1Z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>
+    </button>
+    <a class="topbar-link" href="https://github.com/iruch/javatests" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a>
+</header>
+
+<aside class="sidebar" th:fragment="sidebar">
+    <div class="sidebar-heading">
+        <div>Библиотека тестов</div>
+        <span class="course-count" th:text="${catalog.questionCount()}" title="Всего вопросов">0</span>
+    </div>
+    <nav aria-label="Курсы, темы и уроки" class="course-tree">
+        <section class="course-node" th:each="course : ${catalog.courses}">
+            <details th:open="${scope?.courseId == course.id or (scope == null and courseStat.first)}">
+                <summary class="course-title">
+                    <span class="disclosure" aria-hidden="true"></span>
+                    <span class="course-dot" aria-hidden="true"></span>
+                    <a class="course-label" th:href="@{/courses/{id}(id=${course.id})}" th:text="${course.title}"
+                       th:classappend="${scope?.courseId == course.id and scope?.topicId == null} ? ' active' : ''">Java Core</a>
+                    <span class="topic-count" th:text="${course.questionCount}" title="Вопросов в курсе">0</span>
+                </summary>
+                <ul class="topic-list">
+                    <li th:each="topic : ${course.topics}">
+                        <details class="topic-node" th:if="${!#lists.isEmpty(topic.lessons)}" th:open="${scope?.topicId == topic.id}">
+                            <summary class="topic-summary">
+                                <span class="disclosure small" aria-hidden="true"></span>
+                                <a th:href="@{/topics/{id}(id=${topic.id})}"
+                                   th:classappend="${scope?.topicId == topic.id and scope?.lessonId == null} ? ' active' : ''">
+                                    <span class="node-title" th:text="${topic.title}">Основы языка</span>
+                                    <span class="lesson-count" th:text="${topic.questionCount}">0</span>
+                                </a>
+                            </summary>
+                            <ul class="lesson-list">
+                                <li th:each="lesson : ${topic.lessons}">
+                                    <a th:href="@{/lessons/{id}(id=${lesson.id})}"
+                                       th:classappend="${scope?.lessonId == lesson.id} ? ' active' : ''">
+                                        <span class="topic-marker" aria-hidden="true"></span>
+                                        <span class="node-title" th:text="${lesson.title}">Final</span>
+                                        <span class="lesson-count" th:text="${lesson.questionCount}">0</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </details>
+                        <a class="topic-leaf" th:if="${#lists.isEmpty(topic.lessons)}" th:href="@{/topics/{id}(id=${topic.id})}"
+                           th:classappend="${scope?.topicId == topic.id} ? ' active' : ''">
+                            <span class="topic-marker" aria-hidden="true"></span>
+                            <span class="node-title" th:text="${topic.title}">Java Stream API</span>
+                            <span class="lesson-count" th:text="${topic.questionCount}">0</span>
+                        </a>
+                    </li>
+                </ul>
+            </details>
+        </section>
+        <div class="tree-empty" th:if="${#lists.isEmpty(catalog.courses)}">Курсы пока не добавлены</div>
+    </nav>
+    <div class="sidebar-actions">
+        <button class="rebuild-button" type="button" data-rebuild-open>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg>
+            Пересобрать приложение
+        </button>
+    </div>
+    <div class="sidebar-note"><span class="status-dot" aria-hidden="true"></span><span>Материалы пополняются</span></div>
+
+    <dialog class="app-dialog" data-rebuild-dialog aria-labelledby="rebuild-title">
+        <section data-rebuild-step="confirm">
+            <div class="dialog-mark warning" aria-hidden="true">!</div>
+            <h2 id="rebuild-title">Пересобрать приложение</h2>
+            <p>Приложение будет полностью удалено и заново пересобрано, все данные прошлых тестов будут удалены. Продолжить?</p>
+            <div class="dialog-actions">
+                <button class="secondary-button" type="button" data-rebuild-close autofocus>Нет</button>
+                <button class="danger-button" type="button" data-rebuild-yes>Да</button>
+            </div>
+        </section>
+        <section data-rebuild-step="run" hidden>
+            <h2>Запустите пересборку на компьютере</h2>
+            <p>Браузер не может сам выполнять команды на компьютере, поэтому пересборку делает скрипт из папки проекта.
+                Он ещё раз спросит подтверждение, удалит контейнеры, образы и базу приложения, выполнит
+                <code>docker compose up -d --build</code>, откроет сайт и закроет своё окно.</p>
+            <div class="os-tabs" role="tablist" aria-label="Операционная система">
+                <button type="button" role="tab" data-os-tab="windows">Windows</button>
+                <button type="button" role="tab" data-os-tab="mac">macOS</button>
+                <button type="button" role="tab" data-os-tab="linux">Linux</button>
+            </div>
+            <div class="os-panel" role="tabpanel" data-os-panel="windows">
+                <ol>
+                    <li>Откройте папку проекта, в ней папку <code>scripts</code>.</li>
+                    <li>Дважды щёлкните <code>rebuild.cmd</code>.</li>
+                </ol>
+                <p>Или выполните в PowerShell из папки проекта:</p>
+                <div class="command-line"><code>.\scripts\rebuild.cmd</code><button class="secondary-button" type="button" data-copy=".\scripts\rebuild.cmd">Скопировать</button></div>
+            </div>
+            <div class="os-panel" role="tabpanel" data-os-panel="mac" hidden>
+                <ol>
+                    <li>Откройте папку проекта в Finder, в ней папку <code>scripts</code>.</li>
+                    <li>Дважды щёлкните <code>rebuild.command</code>: откроется Терминал.</li>
+                </ol>
+                <p>Или выполните в Терминале из папки проекта:</p>
+                <div class="command-line"><code>./scripts/rebuild.command</code><button class="secondary-button" type="button" data-copy="./scripts/rebuild.command">Скопировать</button></div>
+            </div>
+            <div class="os-panel" role="tabpanel" data-os-panel="linux" hidden>
+                <p>Выполните в терминале из папки проекта:</p>
+                <div class="command-line"><code>./scripts/rebuild.sh</code><button class="secondary-button" type="button" data-copy="./scripts/rebuild.sh">Скопировать</button></div>
+            </div>
+            <p class="dialog-note">Пересборка занимает 1–3 минуты, всё это время сайт недоступен. Когда приложение поднимется, скрипт сам откроет его в браузере.</p>
+            <div class="dialog-actions">
+                <button class="secondary-button" type="button" data-rebuild-close>Закрыть</button>
+            </div>
+        </section>
+    </dialog>
+</aside>
+
+<nav class="breadcrumb" aria-label="Путь" th:fragment="breadcrumb(crumbs, tail)">
+    <th:block th:each="crumb, it : ${crumbs}">
+        <a th:href="@{${crumb.url}}" th:text="${crumb.title}"
+           th:attr="aria-current=${it.last and tail == null} ? 'page' : null">Тесты</a>
+        <span class="breadcrumb-separator" th:if="${!it.last or tail != null}">/</span>
+    </th:block>
+    <span class="breadcrumb-current" th:if="${tail != null}" th:text="${tail}">Тестирование</span>
+</nav>
+
+<footer class="page-footer" th:fragment="footer"><span>Java-тесты для Study Hub</span><span>Материалы для тестирования</span></footer>
+</body>
+</html>

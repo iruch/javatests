@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: javatests
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/javatests}
+    username: ${DB_USERNAME:javatests}
+    password: ${DB_PASSWORD:javatests}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+  web:
+    resources:
+      chain:
+        strategy:
+          content:
+            enabled: true
+            paths: /**
+  thymeleaf:
+    cache: false
+server:
+  port: ${PORT:8097}
+  servlet:
+    session:
+      tracking-modes: cookie
+  error:
+    whitelabel:
+      enabled: false
+

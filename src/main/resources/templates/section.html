@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ru" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#f6f8fa">
+    <script th:replace="~{fragments/site :: theme-init}"></script>
+    <title th:text="|${scope.title} — Java-тесты для Study Hub|">Раздел — Java-тесты для Study Hub</title><link rel="stylesheet" th:href="@{/css/site.css}">
+</head>
+<body>
+<div th:replace="~{fragments/site :: header}"></div>
+<div class="app-shell"><div class="sidebar-backdrop" data-menu-close></div><div th:replace="~{fragments/site :: sidebar}"></div>
+    <main class="main-content">
+        <nav th:replace="~{fragments/site :: breadcrumb(${scope.crumbs}, null)}"></nav>
+        <section class="quiz-heading">
+            <div>
+                <p class="eyebrow" th:text="${scope.eyebrow}">Java Core</p>
+                <h1 th:text="${scope.title}">Основы языка</h1>
+                <p class="quiz-description" th:switch="${scope.type.name()}">
+                    <span th:case="'COURSE'">Все вопросы курса по всем темам и урокам</span>
+                    <span th:case="'TOPIC'">Все вопросы темы по всем урокам</span>
+                    <span th:case="*">Вопросы урока</span>
+                </p>
+            </div>
+            <div class="quiz-count"><span class="count-number" th:text="${scope.questionCount}">0</span><span>вопросов</span></div>
+        </section>
+
+        <form class="test-launch" method="get" th:action="@{${scope.testUrl()}}" th:if="${scope.questionCount > 0}">
+            <div class="test-launch-copy">
+                <strong>Тестирование</strong>
+                <span>Случайные вопросы из раздела · 2 минуты на каждый вопрос</span>
+            </div>
+            <label class="test-size">
+                <span>Вопросов</span>
+                <select name="limit">
+                    <option th:each="size : ${scope.testSizes()}" th:value="${size}" th:text="${size}"
+                            th:selected="${size == scope.defaultTestSize()}">10</option>
+                    <option th:value="${scope.questionCount}" th:text="|Все (${scope.questionCount})|"
+                            th:selected="${scope.questionCount == scope.defaultTestSize()}">Все</option>
+                </select>
+            </label>
+            <button class="primary-button" type="submit">Начать тестирование</button>
+        </form>
+
+        <nav class="child-links" th:if="${!#lists.isEmpty(scope.children)}" aria-label="Разделы">
+            <a th:each="child : ${scope.children}" th:href="@{${child.url}}" th:classappend="${child.questionCount == 0} ? ' muted' : ''">
+                <span th:text="${child.title}">Final</span><span class="chip-count" th:text="${child.questionCount}">0</span>
+            </a>
+        </nav>
+
+        <section class="quiz-content" aria-live="polite">
+            <div class="quiz-toolbar"><span class="quiz-status"><span></span>Банк вопросов</span><span th:if="${!#lists.isEmpty(questions)}">с эталонными ответами</span></div>
+            <div class="quiz-empty" th:if="${#lists.isEmpty(questions)}"><div class="empty-symbol" aria-hidden="true">?</div><h2>Вопросы готовятся</h2><p>В этом разделе пока нет опубликованных вопросов. Загляните позже — вопросы появятся здесь.</p><a class="back-link" th:href="@{/}"><span aria-hidden="true">←</span> К списку курсов</a></div>
+            <ol class="question-list" th:if="${!#lists.isEmpty(questions)}">
+                <li class="question-item" th:each="q, iter : ${questions}">
+                    <div class="question-number" th:text="${iter.count}">1</div>
+                    <div>
+                        <span class="question-lesson" th:if="${scope.type.name() != 'LESSON'}"
+                              th:text="${scope.type.name() == 'COURSE'} ? |${q.topic} · ${q.lesson}| : ${q.lesson}">Урок</span>
+                        <h2 th:text="${q.question}">Вопрос</h2>
+                        <details class="question-answer"><summary>Ответ</summary><p th:text="${q.answer}">Текст ответа</p></details>
+                    </div>
+                </li>
+            </ol>
+        </section>
+        <footer th:replace="~{fragments/site :: footer}"></footer>
+    </main>
+</div><script th:src="@{/js/site.js}" defer></script>
+</body></html>
